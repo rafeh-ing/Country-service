@@ -32,7 +32,7 @@ pipeline {
             }
         }
 
-        stage('Deploy jar to Nexus') {
+        stage('Deploy war to Nexus') {
             steps {
                 sh 'mvn deploy -DskipTests'
             }
@@ -54,11 +54,17 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy to Tomcat') {
+            steps {
+                sh 'cp target/country-service.war /opt/tomcat-webapps/country-service.war'
+            }
+        }
     }
 
     post {
         success {
-            archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+            archiveArtifacts artifacts: 'target/*.war', fingerprint: true
         }
     }
 }
