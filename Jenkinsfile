@@ -1,37 +1,47 @@
 pipeline {
-        agent any
-        tools {
-            maven 'mymaven'
+    agent any
+
+    tools {
+        jdk 'JDK21'
+        maven 'mymaven'
+    }
+
+    stages {
+        stage('Checkout code') {
+            steps {
+                checkout scm
+            }
         }
-        stages {
-            stage('Checkout code') 
-            {
-                steps {
-                    git branch: 'master', url: 'https://github.com/Jamina-ENSI/Country-service.git'
+
+        stage('Compile, test, package') {
+            steps {
+                sh 'mvn clean verify'
+            }
+            post {
+                always {
+                    junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
                 }
             }
-            stage('Compile code') 
-            {
-                steps {
-                    sh 'mvn compile'
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv(installationName: 'MySonarQubeServer', credentialsId: 'sonarqubePWD') {
+                    sh 'mvn sonar:sonar -Dsonar.projectKey=country-service -Dsonar.projectName=country-service'
                 }
             }
-            stage('Test code') 
-            {
-                steps {
-                    sh 'mvn test '
-                }
-                post{
-                    success {
-                        junit allowEmptyResults: true, testResults: '**/target/surfire-reports/*.xml'
-                    }
-                }
-            }
-            stage('Package code') 
-            {
-                steps {
-                    sh 'mvn package '
-                }
+        }
+
+        stage('Deploy to Nexus') {
+            steps {
+                sh 'mvn deploy -DskipTests'
             }
         }
     }
+
+    post {
+        success {
+            archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+        }
+    }
+}
