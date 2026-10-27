@@ -14,7 +14,6 @@ spec:
     spec:
       containers:
       - name: country-service-container
-        image: jamina2385/my-country-service:2
+        image: rafehaa/country-service:v1
         ports:
-
         - containerPort: 8082
